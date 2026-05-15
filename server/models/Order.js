@@ -47,9 +47,14 @@ const orderSchema = new mongoose.Schema(
       paidAt:        { type: Date },
     },
 
+    paymentInitiatedAt: { type: Date },
+    paymentExpiresAt:   { type: Date },
+
+    adminNotified: { type: Boolean, default: false },
+
     orderStatus: {
       type: String,
-      enum: ['pending', 'confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'],
+      enum: ['pending', 'confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled', 'rto'],
       default: 'pending',
     },
 
@@ -62,12 +67,55 @@ const orderSchema = new mongoose.Schema(
     ],
 
     cancelReason: { type: String },
+    cancelDetails: { type: String },
     deliveredAt:  { type: Date },
+
+    // RTO (Return to Origin)
+    rtoStatus: {
+      type: String,
+      enum: ['none', 'initiated', 'in_transit', 'received', 'restocked'],
+      default: 'none',
+    },
+    rtoDetails: {
+      initiatedAt: { type: Date },
+      reason: {
+        type: String,
+        enum: ['refused', 'not_available', 'wrong_address', 'damaged', 'other'],
+      },
+      receivedAt:  { type: Date },
+      restockedAt: { type: Date },
+      note:        { type: String },
+    },
+
+    // Refund tracking
+    refund: {
+      status: {
+        type: String,
+        enum: ['none', 'initiated', 'processing', 'completed', 'failed'],
+        default: 'none',
+      },
+      amount:        { type: Number },
+      initiatedAt:   { type: Date },
+      completedAt:   { type: Date },
+      transactionId: { type: String },
+      note:          { type: String },
+    },
+
+    // Internal admin notes (not visible to customer)
+    adminNotes: [
+      {
+        note:     { type: String, required: true },
+        addedBy:  { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        addedAt:  { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );
 
 orderSchema.index({ user: 1, createdAt: -1 });
+orderSchema.index({ paymentStatus: 1, paymentExpiresAt: 1 });
+orderSchema.index({ 'refund.status': 1 });
 
 orderSchema.pre('save', function (next) {
   if (this.isNew && !this.orderNumber) {

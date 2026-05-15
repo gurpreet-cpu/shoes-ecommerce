@@ -6,7 +6,8 @@ const ApiError = require('../utils/ApiError');
 const ApiResponse = require('../utils/ApiResponse');
 const { generateAccessToken, generateRefreshToken } = require('../utils/generateTokens');
 const User = require('../models/User');
-const { sendWelcomeEmail, sendPasswordResetEmail } = require('../services/emailService');
+const { sendWelcomeEmail, sendPasswordResetEmail, sendNewUserAdminEmail } = require('../services/emailService');
+const logger = require('../services/logger');
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -40,6 +41,7 @@ const register = asyncHandler(async (req, res) => {
   });
 
   await sendWelcomeEmail(user, emailVerificationToken);
+  sendNewUserAdminEmail(user).catch((err) => logger.error('Admin new user email failed:', err));
 
   res.status(201).json(new ApiResponse(201, null, 'Registration successful, please verify your email'));
 });
@@ -75,6 +77,7 @@ const login = asyncHandler(async (req, res) => {
   const refreshToken = generateRefreshToken(user._id);
 
   user.refreshToken = refreshToken;
+  user.lastLoginAt = new Date();
   await user.save();
 
   res.cookie('refreshToken', refreshToken, COOKIE_OPTIONS);

@@ -92,15 +92,17 @@ app.get('/health', (req, res) => {
 });
 
 // ── Routes ─────────────────────────────────────────────────────────────────
-app.use('/api/auth',     require('./routes/auth'));
-app.use('/api/users',    require('./routes/users'));
-app.use('/api/products', require('./routes/products'));
-app.use('/api/cart',     require('./routes/cart'));
-app.use('/api/orders',   require('./routes/orders'));
-app.use('/api/payment',  require('./routes/payment'));
-app.use('/api/reviews',  require('./routes/reviews'));
-app.use('/api/coupons',  require('./routes/coupons'));
-app.use('/api/admin',    require('./routes/admin'));
+app.use('/api/auth',      require('./routes/auth'));
+app.use('/api/users',     require('./routes/users'));
+app.use('/api/products',  require('./routes/products'));
+app.use('/api/cart',      require('./routes/cart'));
+app.use('/api/orders',    require('./routes/orders'));
+app.use('/api/payment',   require('./routes/payment'));
+app.use('/api/reviews',   require('./routes/reviews'));
+app.use('/api/coupons',   require('./routes/coupons'));
+app.use('/api/admin',     require('./routes/admin'));
+app.use('/api/wishlist',  require('./routes/wishlist'));
+app.use('/api/questions', require('./routes/questions'));
 // ───────────────────────────────────────────────────────────────────────────
 
 // 404 handler
@@ -114,6 +116,8 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+  // Start cron jobs after server is up
+  require('./services/cronService');
 });
 
 module.exports = app;

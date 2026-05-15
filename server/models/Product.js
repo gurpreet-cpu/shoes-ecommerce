@@ -37,8 +37,10 @@ const productSchema = new mongoose.Schema(
       count:   { type: Number, default: 0 },
     },
 
-    isFeatured: { type: Boolean, default: false },
-    isActive:   { type: Boolean, default: true },
+    isFeatured:        { type: Boolean, default: false },
+    isActive:          { type: Boolean, default: true },
+    lowStockThreshold: { type: Number, default: 3 },
+    totalSold:         { type: Number, default: 0 },
   },
   { timestamps: true }
 );

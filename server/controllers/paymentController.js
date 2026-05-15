@@ -10,6 +10,7 @@ const {
   sendPaymentConfirmedEmail,
   sendPaymentFailedEmail,
   sendOrderStatusEmail,
+  sendNewOrderAdminEmail,
 } = require('../services/emailService');
 
 // ── POST /api/payment/paytm/initiate ─────────────────────────────────────────
@@ -33,7 +34,11 @@ const initiatePaytmPayment = asyncHandler(async (req, res) => {
     throw new ApiError(502, `Paytm initiation failed: ${err.message}`);
   }
 
-  order.paymentDetails = { ...order.paymentDetails, paytmOrderId: order.orderNumber };
+  // Task 7: track payment timeout (15 minutes)
+  const now = new Date();
+  order.paymentDetails      = { ...order.paymentDetails, paytmOrderId: order.orderNumber };
+  order.paymentInitiatedAt  = now;
+  order.paymentExpiresAt    = new Date(now.getTime() + 15 * 60 * 1000);
   await order.save();
 
   res.json(
@@ -52,7 +57,7 @@ const paytmCallback = asyncHandler(async (req, res) => {
   const checksum = params.CHECKSUMHASH;
   delete params.CHECKSUMHASH;
 
-  // CRITICAL — hard reject on checksum failure, never process
+  // CRITICAL — hard reject on checksum failure
   const isValid = await verifyChecksum(params, checksum);
   if (!isValid) {
     logger.warn(`[Paytm Callback] Checksum MISMATCH — possible fraud. ORDERID: ${params.ORDERID}`);
@@ -65,10 +70,31 @@ const paytmCallback = asyncHandler(async (req, res) => {
     return res.status(200).json({ message: 'Order not found' });
   }
 
-  // Guard against double-processing (idempotent)
+  // Guard against double-processing
   if (order.paymentStatus === 'paid') {
     logger.info(`[Paytm Callback] Duplicate callback for already-paid order: ${params.ORDERID}`);
     return res.status(200).json({ message: 'Already processed' });
+  }
+
+  // Task 7: check payment expiry
+  if (order.paymentExpiresAt && new Date() > order.paymentExpiresAt) {
+    order.paymentStatus = 'failed';
+    order.orderStatus   = 'cancelled';
+    order.statusHistory.push({
+      status:    'cancelled',
+      timestamp: new Date(),
+      note:      'Auto-cancelled: payment session expired',
+    });
+    // Restore stock
+    for (const item of order.items) {
+      await Product.updateOne(
+        { _id: item.product, 'sizes.size': item.size },
+        { $inc: { 'sizes.$.stock': item.quantity } }
+      );
+    }
+    await order.save();
+    logger.warn(`[Paytm Callback] Payment expired for order: ${params.ORDERID}`);
+    return res.status(200).json({ message: 'Payment session expired' });
   }
 
   if (params.STATUS === 'TXN_SUCCESS') {
@@ -92,6 +118,14 @@ const paytmCallback = asyncHandler(async (req, res) => {
     );
     logger.info(`[Paytm Callback] Payment successful for order: ${params.ORDERID}, txn: ${params.TXNID}`);
     sendPaymentConfirmedEmail(order.user, order).catch(() => {});
+
+    // Task 2: Admin notification — only if not already sent
+    if (!order.adminNotified) {
+      sendNewOrderAdminEmail(order, order.user).catch((err) =>
+        logger.error('Admin new order email failed (paytm callback):', err)
+      );
+      await Order.findByIdAndUpdate(order._id, { adminNotified: true });
+    }
 
   } else {
     // Restore stock on payment failure
@@ -118,15 +152,19 @@ const paytmCallback = asyncHandler(async (req, res) => {
 // ── GET /api/payment/paytm/status/:orderId ────────────────────────────────────
 const getPaymentStatus = asyncHandler(async (req, res) => {
   const order = await Order.findOne({ _id: req.params.orderId, user: req.user._id })
-    .select('orderNumber paymentStatus orderStatus paymentDetails');
+    .select('orderNumber paymentStatus orderStatus paymentDetails paymentExpiresAt');
   if (!order) throw new ApiError(404, 'Order not found');
+
+  const expired = order.paymentExpiresAt && new Date() > order.paymentExpiresAt;
 
   res.json(
     new ApiResponse(200, {
-      paymentStatus: order.paymentStatus,
-      orderStatus:   order.orderStatus,
-      transactionId: order.paymentDetails?.transactionId || null,
-      orderNumber:   order.orderNumber,
+      paymentStatus:    order.paymentStatus,
+      orderStatus:      order.orderStatus,
+      transactionId:    order.paymentDetails?.transactionId || null,
+      orderNumber:      order.orderNumber,
+      paymentExpiresAt: order.paymentExpiresAt,
+      sessionExpired:   expired && order.paymentStatus === 'pending',
     })
   );
 });
