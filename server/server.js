@@ -28,12 +28,16 @@ const allowedOrigins = [
   process.env.CLIENT_URL,
 ].filter(Boolean);
 
+// Matches all Vercel preview + production deployments for this project:
+// shoes-ecommerce-*.vercel.app  and  shoes-ecommerce-gurpreetjoey-*.vercel.app
+const vercelPreview = /^https:\/\/shoes-ecommerce(-[a-z0-9]+)*-gurpreetjoey-5743s-projects\.vercel\.app$/;
+
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, Postman, curl)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.includes(origin)) {
+    if (allowedOrigins.includes(origin) || vercelPreview.test(origin)) {
       return callback(null, true);
     }
 
