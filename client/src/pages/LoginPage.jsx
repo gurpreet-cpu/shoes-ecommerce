@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,6 +10,7 @@ import { setCredentials } from '../store/authSlice';
 import api from '../lib/axios';
 import { toast } from '../lib/toast';
 import { cn } from '../lib/utils';
+import GoogleButton from '../components/auth/GoogleButton';
 
 // ── Schemas ────────────────────────────────────────────────────────────────────
 
@@ -242,6 +243,14 @@ function LoginForm({ onSwitch }) {
         {isSubmitting ? 'Signing in…' : 'Sign In'}
       </motion.button>
 
+      <div className="flex items-center gap-3 my-1">
+        <div className="flex-1 h-px bg-border" />
+        <span className="text-textSecondary text-sm font-body">or</span>
+        <div className="flex-1 h-px bg-border" />
+      </div>
+
+      <GoogleButton />
+
       <p className="text-center font-body text-sm text-textSecondary">
         Don't have an account?{' '}
         <button
@@ -354,6 +363,14 @@ function RegisterForm({ onSwitch }) {
         {isSubmitting ? 'Creating account…' : 'Create Account'}
       </motion.button>
 
+      <div className="flex items-center gap-3 my-1">
+        <div className="flex-1 h-px bg-border" />
+        <span className="text-textSecondary text-sm font-body">or</span>
+        <div className="flex-1 h-px bg-border" />
+      </div>
+
+      <GoogleButton />
+
       <p className="text-center font-body text-sm text-textSecondary">
         Already have an account?{' '}
         <button
@@ -372,6 +389,13 @@ function RegisterForm({ onSwitch }) {
 
 export function AuthPage({ initialTab = 'login' }) {
   const [tab, setTab] = useState(initialTab);
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error === 'google_failed') toast.error('Google sign in failed. Try again.');
+    if (error === 'no_token') toast.error('Authentication error. Please try again.');
+  }, []);
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)]">

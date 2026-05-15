@@ -169,6 +169,23 @@ const getMe = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, { user: req.user }));
 });
 
+// ── googleCallback ────────────────────────────────────────────────────────────
+const googleCallback = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  const accessToken  = generateAccessToken(user._id);
+  const refreshToken = generateRefreshToken(user._id);
+
+  user.refreshToken = refreshToken;
+  await user.save();
+
+  res.cookie('refreshToken', refreshToken, COOKIE_OPTIONS);
+
+  res.redirect(
+    `${process.env.CLIENT_URL}/auth/google/success?token=${accessToken}&userId=${user._id}`
+  );
+});
+
 module.exports = {
   register,
   verifyEmail,
@@ -178,4 +195,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   getMe,
+  googleCallback,
 };

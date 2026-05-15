@@ -19,6 +19,7 @@ import AdminOrdersPage from '../pages/admin/AdminOrdersPage';
 import AdminProductsPage from '../pages/admin/AdminProductsPage';
 import AdminUsersPage from '../pages/admin/AdminUsersPage';
 import NotFoundPage from '../pages/NotFoundPage';
+import GoogleSuccessPage from '../pages/auth/GoogleSuccessPage';
 
 function ProtectedRoute() {
   const { isAuthenticated } = useSelector((state) => state.auth);
@@ -42,6 +43,7 @@ const router = createBrowserRouter([
       { path: '/shop/:slug', element: <ProductDetailPage /> },
       { path: '/login', element: <LoginPage /> },
       { path: '/register', element: <RegisterPage /> },
+      { path: '/auth/google/success', element: <GoogleSuccessPage /> },
       {
         element: <ProtectedRoute />,
         children: [

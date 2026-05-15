@@ -13,6 +13,8 @@ const connectDB = require('./config/db');
 const logger = require('./services/logger');
 const errorHandler = require('./middleware/errorHandler');
 const { apiLimiter } = require('./middleware/rateLimiter');
+const session = require('express-session');
+const passport = require('./config/passport');
 
 const app = express();
 
@@ -54,6 +56,16 @@ app.use(mongoSanitize());
 // XSS and HTTP parameter pollution protection
 app.use(xssClean());
 app.use(hpp());
+
+// Session + Passport (required for Google OAuth callback; session: false on protected routes)
+app.use(session({
+  secret:            process.env.SESSION_SECRET,
+  resave:            false,
+  saveUninitialized: false,
+  cookie:            { secure: process.env.NODE_ENV === 'production' },
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Request logging (dev only in console; morgan also writes to combined.log via Winston stream in prod)
 if (process.env.NODE_ENV !== 'production') {
