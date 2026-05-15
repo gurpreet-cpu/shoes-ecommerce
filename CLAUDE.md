@@ -1,19 +1,136 @@
-# CLAUDE.md — Shoe Ecommerce Backend
+# CLAUDE.md — Shoe Ecommerce (Full Stack)
 
 > This is the operating manual for Claude Code.
 > Read this ENTIRE file before writing a single line of code.
-> The frontend does NOT exist yet. Build and test the backend completely first.
 
 ---
 
 ## 🧠 Project Overview
 
-A production-ready REST API backend for a shoe ecommerce store selling Men's and Women's shoes.
-Built with Node.js + Express + MongoDB Atlas. Payments via Paytm + Cash on Delivery.
-Email notifications via Nodemailer (Gmail SMTP). Deployed on Railway or Render.
+A production-ready shoe ecommerce store selling Men's and Women's shoes.
+**Backend:** Node.js + Express + MongoDB Atlas. Payments via Paytm + Cash on Delivery. Email via Nodemailer (Gmail SMTP).
+**Frontend:** React + Vite + shadcn/ui + Tailwind CSS. Dark Luxury design system.
 
-**Current Phase: BACKEND ONLY**
-Frontend (React + Vite) will be built in Phase 2 after this backend is fully tested.
+**Current Phase: PHASE 2 — FRONTEND**
+Backend is complete and tested. Now building the React frontend in `client/`.
+
+---
+
+## 🎨 Frontend Design System (for frontend-design + ui-ux-pro-max plugins)
+
+### Active Plugins
+- **frontend-design** — use for building components, pages, and layouts
+- **ui-ux-pro-max** — use for design decisions, color/font guidance, UX review
+
+### Design Style: Dark Luxury
+Inspired by high-end fashion brands. Dark backgrounds, gold/amber accents, glassmorphism panels, premium typography.
+
+### Color Palette
+```
+Background:      #0A0A0A  (primary surface)
+Surface:         #111111  (cards, panels)
+Surface-2:       #1A1A1A  (elevated, modals)
+Border:          #2A2A2A  (dividers, card borders)
+Accent-Gold:     #C9A84C  (primary brand, CTAs, highlights)
+Accent-Gold-2:   #E8C97A  (hover state, lighter gold)
+Text-Primary:    #F5F5F0  (headings, important labels)
+Text-Secondary:  #A0998A  (body copy, descriptions)
+Text-Muted:      #5C5650  (placeholders, disabled)
+Error:           #E05252  (form errors, destructive)
+Success:         #4CAF78  (order confirmed, in stock)
+```
+
+### Typography
+```
+Display / Headings:  Playfair Display (Google Fonts) — serif, editorial weight
+Body / UI:           DM Sans (Google Fonts) — clean, readable at small sizes
+Mono / Prices:       DM Mono — for prices, order numbers, codes
+```
+
+### Component Style Rules
+- Cards use `bg-[#111111] border border-[#2A2A2A]` with subtle gold border on hover
+- Glassmorphism panels: `bg-white/5 backdrop-blur-md border border-white/10`
+- CTAs: solid gold `bg-[#C9A84C] text-black hover:bg-[#E8C97A]` — never use default shadcn blue
+- Inputs: dark fill `bg-[#1A1A1A] border-[#2A2A2A] focus:border-[#C9A84C]`
+- Shadows: `shadow-[0_4px_32px_rgba(201,168,76,0.08)]` — warm gold glow, never cool grey
+- Border radius: `rounded-sm` for inputs/buttons, `rounded-lg` for cards, `rounded-2xl` for modals
+- Hover transitions: always `transition-all duration-200`
+
+### Font Loading (in index.html)
+```html
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+```
+
+### shadcn/ui Customization
+Override shadcn defaults in `client/src/lib/utils.ts` and `tailwind.config.js`:
+- Primary color → gold (#C9A84C)
+- Background → #0A0A0A
+- Foreground → #F5F5F0
+- Muted → #1A1A1A
+- Border → #2A2A2A
+
+---
+
+## 📱 Frontend Pages & Routes
+
+| Route | Component | Description |
+|-------|-----------|-------------|
+| `/` | Home | Hero, featured products, categories |
+| `/products` | ProductListing | Filter sidebar, product grid |
+| `/products/:slug` | ProductDetail | Images, sizes, add to cart |
+| `/cart` | Cart | Items, coupon, totals |
+| `/checkout` | Checkout | Address, payment method |
+| `/orders` | MyOrders | Order history |
+| `/orders/:id` | OrderDetail | Status timeline, items |
+| `/auth/login` | Login | Email + password |
+| `/auth/register` | Register | Name, email, password |
+| `/auth/forgot-password` | ForgotPassword | |
+| `/admin` | AdminDashboard | Stats, charts |
+| `/admin/products` | AdminProducts | CRUD table |
+| `/admin/orders` | AdminOrders | Order management |
+| `/admin/users` | AdminUsers | User management |
+
+---
+
+## 🏗️ Frontend Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | React 18 + Vite 5 |
+| Styling | Tailwind CSS v3 + shadcn/ui |
+| Routing | React Router v6 |
+| State | Zustand (cart, auth) |
+| Data Fetching | TanStack Query v5 |
+| Forms | React Hook Form + Zod |
+| HTTP | Axios (base URL = `VITE_API_URL`) |
+| Charts | Recharts (admin analytics) |
+| Icons | Lucide React |
+
+### Frontend Folder Structure
+```
+client/
+├── public/
+├── src/
+│   ├── api/           # Axios instance + per-resource API fns
+│   ├── components/
+│   │   ├── ui/        # shadcn/ui components (auto-generated)
+│   │   ├── layout/    # Navbar, Footer, AdminSidebar
+│   │   ├── product/   # ProductCard, ProductGrid, SizeSelector
+│   │   ├── cart/      # CartItem, CartSummary
+│   │   ├── order/     # OrderCard, StatusTimeline
+│   │   └── common/    # LoadingSpinner, ErrorBoundary, EmptyState
+│   ├── pages/         # One file per route
+│   ├── store/         # Zustand stores (auth.js, cart.js)
+│   ├── hooks/         # useAuth, useCart, useProducts
+│   ├── lib/           # utils.ts (shadcn), axios.js
+│   └── main.jsx
+├── index.html
+├── tailwind.config.js
+├── vite.config.js
+└── package.json
+```
+
+---
 
 ---
 
