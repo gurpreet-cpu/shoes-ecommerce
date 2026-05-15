@@ -21,29 +21,34 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
+// CORS — must be first middleware so preflight OPTIONS requests are handled before helmet etc.
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, curl)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// Handle preflight requests for all routes
+app.options('*', cors());
+
 // Security headers
 app.use(helmet());
-
-// CORS
-const allowedOrigins =
-  process.env.NODE_ENV === 'production'
-    ? [process.env.CLIENT_URL]
-    : ['http://localhost:5173', 'http://localhost:3000'];
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  })
-);
 
 // Body parsing (10kb limit prevents large payload attacks)
 app.use(express.json({ limit: '10kb' }));
